@@ -7,7 +7,7 @@ def load_csv_data(file_name):
 
 # Load data from the two CSV files
 streaming_data = load_csv_data('streaming_data.csv')  # Update with the correct file path
-decompressed_data = load_csv_data('SP_Decompress.csv')  # Update with the correct file path
+decompressed_data = load_csv_data('result/SP_Decompress.csv')  # Update with the correct file path
 
 #Plot the graph comparing original streaming data and decompressed data
 plt.figure(figsize=(10, 6))

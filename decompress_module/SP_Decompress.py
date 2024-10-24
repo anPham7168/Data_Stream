@@ -56,7 +56,7 @@ def reconstruct_data(segments):
 
 
 
-file_name = "SP_Compress.csv"
+file_name = "../result/SP_Compress.csv"
 list_field = ["Quantized Value","Lower Slope","Upper Slope","Time Points"]
 
 compressiveData = import_data_from_csv_file(file_name, list_field)
@@ -75,7 +75,7 @@ plt.grid(True)
 plt.show()
 
 # Specify the output file
-output_file = "SP_Decompress.csv"
+output_file = "../result/SP_Decompress.csv"
 
 # Open the CSV file in write mode
 with open(output_file, mode='w', newline='') as file:
