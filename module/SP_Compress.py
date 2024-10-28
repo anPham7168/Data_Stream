@@ -1,4 +1,5 @@
 import os
+from math import floor
 
 import pandas as pd
 
@@ -16,7 +17,7 @@ def save_groups_to_csv(groups, output_file_path):
         df.to_csv(output_file_path, mode='a', index=False, header=False)
 
 
-class TimeSeriesCompression:
+class TimeSeriesCompressionSimPiece:
     def __init__(self, epsilon):
         self.epsilon = epsilon
         self.dict_segments = {}

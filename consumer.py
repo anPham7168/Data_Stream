@@ -2,7 +2,7 @@ import os
 from math import floor
 import pandas as pd
 from confluent_kafka import Consumer
-from module.SP_Compress import TimeSeriesCompression
+from module.SP_Compress import TimeSeriesCompressionSimPiece
 
 
 configs = {'bootstrap.servers': '127.0.0.1:9092',
@@ -12,7 +12,7 @@ consumer = Consumer(configs)
 
 consumer.subscribe(['demo_python'])
 epsilon = 5
-compressor = TimeSeriesCompression(epsilon)
+compressor = TimeSeriesCompressionSimPiece(epsilon)
 try:
     while True:
         msg = consumer.poll(1.0)
