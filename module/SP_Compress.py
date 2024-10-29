@@ -106,7 +106,7 @@ class TimeSeriesCompressionSimPiece:
             groups.append(grp)
 
         # Save data to a CSV file
-        save_groups_to_csv(groups, "../result/SP_Compress.csv")
+        save_groups_to_csv(groups, "../result/sim-piece/SP_Compress.csv")
         self.tmp_dict_segments = {}
 
         print(f"Processed {len(groups)} groups from the buffer.")
