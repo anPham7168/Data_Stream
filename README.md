@@ -42,3 +42,10 @@ kafka-system/: Manages data streaming through Kafka.
 
 result/: Stores output files for compressed and decompressed data.
 
+## Sample Result
+Compare original data with decompressed data in difference algorithm
+![Project screenshot](image/view_general_data.jpeg)
+Compare compressed data file size in 2 ways
+![Project screenshot](image/compare_size.jpeg)
+Compare run time 
+![Project screenshot](image/compare_run_time.png)
