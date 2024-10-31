@@ -1,8 +1,5 @@
-import os
-from math import floor
-import pandas as pd
 from confluent_kafka import Consumer
-from module.SP_Compress import TimeSeriesCompressionSimPiece
+from algorithm.Sim_Piece.SP_Compress import TimeSeriesCompressionSimPiece
 
 
 configs = {'bootstrap.servers': '127.0.0.1:9092',

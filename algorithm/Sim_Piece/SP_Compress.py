@@ -1,8 +1,19 @@
+import csv
 import os
 from math import floor
 
 import pandas as pd
 
+def load_data(file_path):
+    data_signal = []
+    with open(file_path, 'r') as file:
+        reader = csv.reader(file)
+        next(reader)
+        for row in reader:
+            timestamp = int(row[0])
+            value = float(row[1])
+            data_signal.append((timestamp, value))
+    return data_signal
 
 def save_groups_to_csv(groups, output_file_path):
     # Convert the groups to a DataFrame
@@ -106,7 +117,7 @@ class TimeSeriesCompressionSimPiece:
             groups.append(grp)
 
         # Save data to a CSV file
-        save_groups_to_csv(groups, "../result/sim-piece/SP_Compress.csv")
+        save_groups_to_csv(groups, "../../result/sim-piece/SP_Compress.csv")
         self.tmp_dict_segments = {}
 
         print(f"Processed {len(groups)} groups from the buffer.")
@@ -118,5 +129,21 @@ class TimeSeriesCompressionSimPiece:
         if self.buffer > 0:
             # If there are still points left in the buffer, process them
             print(f"Processing remaining data in buffer: {self.buffer}")
+            # add current segment havenot been add to the dic_segments
+            if self.pb[1] not in self.dict_segments:
+                self.dict_segments[self.pb[1]] = []
+            self.dict_segments[self.pb[1]].append((round(self.slp_upper, 3), round(self.slp_lower, 3), self.pb[0]))
+
+
             self.tmp_dict_segments = self.dict_segments
             self.process_phrase_2()
+
+
+file_path = "../../generate_data/streaming_data.csv"
+data = load_data(file_path)
+epsilon = 5
+SP_Compressor = TimeSeriesCompressionSimPiece(epsilon)
+
+for data_point in data :
+    SP_Compressor.process_data_point(data_point)
+SP_Compressor.finish_processing()

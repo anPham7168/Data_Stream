@@ -33,7 +33,7 @@ for i in range(10000):
 producer.flush()
 
 # Write the data to a CSV file
-csv_file_path = 'streaming_data.csv'
+csv_file_path = '../generate_data/streaming_data.csv'
 with open(csv_file_path, mode='w', newline='') as file:
     writer = csv.DictWriter(file, fieldnames=["Timestamp", "Value"])
     writer.writeheader()

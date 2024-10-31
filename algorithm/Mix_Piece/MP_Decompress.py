@@ -31,9 +31,9 @@ def read_groups(file_path):
     return Groups
 
 
-groups_b_path = '../result/mix-piece/MP_Compress_Groups_b.csv'
-groups_path = '../result/mix-piece/MP_Compress_Groups.csv'
-rest_path = '../result/mix-piece/MP_Compress_Rest.csv'
+groups_b_path = '../../result/mix-piece/MP_Compress_Groups_b.csv'
+groups_path = '../../result/mix-piece/MP_Compress_Groups.csv'
+rest_path = '../../result/mix-piece/MP_Compress_Rest.csv'
 
 groups_b = read_groups_b(groups_b_path)
 groups = read_groups(groups_path)
@@ -72,7 +72,7 @@ for i in range (0,len(list_segment)):
         y=round(slope*t + b,2)
         data_points.append((t,y))
 
-output_file_path ='../result/mix-piece/MP_Decompress.csv'
+output_file_path = '../../result/mix-piece/MP_Decompress.csv'
 
 df = pd.DataFrame(data_points, columns=['Timestamp','Value'])
 if not os.path.isfile(output_file_path):

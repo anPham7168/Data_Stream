@@ -26,7 +26,7 @@ for i in range (0,200):
     tup = (i, parabolic(-0.01,2,0,i)+random.randint(-5,5))
     data.append(tup)
 
-file_path = "./streaming_data.csv"
+file_path = "streaming_data.csv"
 
 # Save to CSV, with headers only if the file does not exist
 df = pd.DataFrame(data, columns=['Timestamp', 'Value'])

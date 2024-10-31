@@ -50,6 +50,7 @@ class TimeSeriesCompressionMixPiece:
         self.ceil= True
         self.b1 = None
         self.b2 = None
+        self.ts = None
         self.slp_upper_1=float('inf')
         self.slp_upper_2=float('inf')
         self.slp_lower_1=float('-inf')
@@ -60,57 +61,51 @@ class TimeSeriesCompressionMixPiece:
         Timestamp , Value = data_point # the first point of data stream
         self.buffer +=1
 
-        if self.b1 is None and self.b2 is None:
+        if self.b1 is None and self.b2 is None and self.ts is None:
             # Initialize the first point
             self.b1 = math.floor(Value / self.epsilon) * self.epsilon
             self.b2 = math.ceil(Value / self.epsilon) * self.epsilon
+            self.ts = Timestamp
             return
 
 
 
-        for(tc,vc) in data_signal[1:]:
-            if vc>slp_upper_1*(tc-ts)+b1+self.epsilon or vc<slp_lower_1*(tc-ts)+b1-self.epsilon: #check flor
-                floor = False
-            if vc>slp_upper_2*(tc-ts)+b2+self.epsilon or vc<slp_lower_2*(tc-ts)+b2-self.epsilon: #check ceil
-                ceil = False
-            length = length + floor - ceil # +1 when floor = True , -1 when ceil = True
-            if not floor and not ceil: # end of 1 segment
-                if length >0:
-                    if b1 not in self.b_intervals:
-                        self.b_intervals[b1] = []
-                    self.b_intervals[b1].append((slp_lower_1,slp_upper_1,ts))
-                else:
-                    if b2 not in self.b_intervals:
-                        self.b_intervals[b2] = []
-                    self.b_intervals[b2].append((slp_lower_2,slp_upper_2,ts))
 
-                ts,vs=tc,vc
-                b1 = math.floor(vs / self.epsilon) * self.epsilon
-                b2 = math.ceil(vs / self.epsilon) * self.epsilon
-                slp_upper_1, slp_lower_1 = float('inf'), float('-inf')  # handle floor
-                slp_upper_2, slp_lower_2 = float('inf'), float('-inf')  # handle ceil
-                floor = True
-                ceil = True
-                length = 0
-                continue
-            #update the upper, lower slope of floor and ceil boundary
-            if vc < slp_upper_1*(tc-ts)+b1-self.epsilon:
-                slp_upper_1= round((vc+self.epsilon-b1)/(tc-ts),2)
-            if vc > slp_lower_1*(tc-ts) + b1+self.epsilon:
-                slp_lower_1 = round((vc-self.epsilon-b1)/(tc-ts),2)
-            if vc < slp_upper_2*(tc-ts)+b2-self.epsilon:
-                slp_upper_2 = round((vc+self.epsilon-b2)/(tc-ts),2)
-            if vc > slp_lower_2*(tc-ts)+b2+self.epsilon:
-                slp_lower_2 = round((vc-self.epsilon-b2)/(tc-ts),2)
+        if Value>self.slp_upper_1*(Timestamp-self.ts)+self.b1+self.epsilon or Value<self.slp_lower_1*(Timestamp-self.ts)+self.b1-self.epsilon: #check flor
+            self.floor = False
+        if Value>self.slp_upper_2*(Timestamp-self.ts)+self.b2+self.epsilon or Value<self.slp_lower_2*(Timestamp-self.ts)+self.b2-self.epsilon: #check ceil
+            self.ceil = False
+        self.length = self.length + self.floor - self.ceil # +1 when floor = True , -1 when ceil = True
 
-        if length  >0 :
-            if b1 not in self.b_intervals:
-                self.b_intervals[b1] = []
-            self.b_intervals[b1].append((slp_lower_1,slp_upper_1,ts));
+        if not self.floor and not self.ceil: # end of 1 segment
+            if self.length >0:
+                if self.b1 not in self.b_intervals:
+                    self.b_intervals[self.b1] = []
+                self.b_intervals[self.b1].append((self.slp_lower_1,self.slp_upper_1,self.ts))
+            else:
+                if self.b2 not in self.b_intervals:
+                    self.b_intervals[self.b2] = []
+                self.b_intervals[self.b2].append((self.slp_lower_2,self.slp_upper_2,self.ts))
+
+            self.ts=Timestamp
+            self.b1 = math.floor(Value / self.epsilon) * self.epsilon
+            self.b2 = math.ceil(Value / self.epsilon) * self.epsilon
+            self.slp_upper_1, self.slp_lower_1 = float('inf'), float('-inf')  # handle floor
+            self.slp_upper_2, self.slp_lower_2 = float('inf'), float('-inf')  # handle ceil
+            self.floor = True
+            self.ceil = True
+            self.length = 0
         else:
-            if b2 not in self.b_intervals:
-                self.b_intervals[b2] = []
-            self.b_intervals[b2].append((slp_lower_2,slp_upper_2,ts));
+            if Value < self.slp_upper_1*(Timestamp-self.ts)+self.b1-self.epsilon:
+                self.slp_upper_1= round((Value+self.epsilon-self.b1)/(Timestamp-self.ts),2)
+            if Value > self.slp_lower_1*(Timestamp-self.ts) + self.b1+self.epsilon:
+                self.slp_lower_1 = round((Value-self.epsilon-self.b1)/(Timestamp-self.ts),2)
+            if Value < self.slp_upper_2*(Timestamp-self.ts)+self.b2-self.epsilon:
+                self.slp_upper_2 = round((Value+self.epsilon-self.b2)/(Timestamp-self.ts),2)
+            if Value > self.slp_lower_2*(Timestamp-self.ts)+self.b2+self.epsilon:
+                self.slp_lower_2 = round((Value-self.epsilon-self.b2)/(Timestamp-self.ts),2)
+
+
 
         if self.buffer >= self.buffer_limit:
             print(f'Buffer limit reached: {self.buffer}')
@@ -186,25 +181,42 @@ class TimeSeriesCompressionMixPiece:
 
 
 
-        save_groups_b_to_csv(reformat_groups_b,output_file_path='../result/mix-piece/MP_Compress_Groups_b.csv')
-        save_groups_to_csv(reformat_groups,output_file_path='../result/mix-piece/MP_Compress_Groups.csv')
-        save_groups_to_csv(reformat_rest,output_file_path='../result/mix-piece/MP_Compress_Rest.csv')
-        return reformat_groups_b,reformat_groups,reformat_rest
+        save_groups_b_to_csv(reformat_groups_b, output_file_path='../../result/mix-piece/MP_Compress_Groups_b.csv')
+        save_groups_to_csv(reformat_groups, output_file_path='../../result/mix-piece/MP_Compress_Groups.csv')
+        save_groups_to_csv(reformat_rest, output_file_path='../../result/mix-piece/MP_Compress_Rest.csv')
 
-    def Mix_Piece_Compress_And_Decompress(self,data):
-        result_phase1 = self.mix_piece_phase1(data)
-        groups_b,groups,rest=self.mix_piece_phase2(result_phase1)
-        self.decompres_mix_piece_from_phases1_result(result_phase1)
+        print(f'Have been write down the data to csv file')
+
+    def finish_processing(self):
+        """
+        Call this method to process any remaining data points in the buffer after all points have been processed.
+        """
+        if self.buffer > 0:
+            # If there are still points left in the buffer, process them
+            print(f"Processing remaining data in buffer: {self.buffer}")
+            #handle current segment have not been add to the b_intervals
+            if self.length > 0:
+                if self.b1 not in self.b_intervals:
+                    self.b_intervals[self.b1] = []
+                self.b_intervals[self.b1].append((self.slp_lower_1, self.slp_upper_1, self.ts));
+            else:
+                if self.b2 not in self.b_intervals:
+                    self.b_intervals[self.b2] = []
+                self.b_intervals[self.b2].append((self.slp_lower_2, self.slp_upper_2, self.ts));
+
+            self.tmp_b_intervals = self.b_intervals
+            self.mix_piece_phase2()
 
 
 
-file_path = "../streaming_data.csv"
+file_path = "../../generate_data/streaming_data.csv"
 data = load_data(file_path)
 epsilon = 5
 MP_compressor = TimeSeriesCompressionMixPiece(epsilon)
-MP_compressor.Mix_Piece_Compress_And_Decompress(data)
 
-
+for data_point in data :
+    MP_compressor.mix_piece_phase1(data_point)
+MP_compressor.finish_processing()
 
 
 
