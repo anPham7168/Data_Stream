@@ -1,7 +1,7 @@
 import csv
 import math
 import os
-
+import time
 
 import pandas as pd
 
@@ -16,6 +16,11 @@ def load_data(file_path):
             value = float(row[1])
             data_signal.append((timestamp, value))
     return data_signal
+
+def calculate_average_execution_time(times):
+    if not times:
+        return 0  # Return 0 if the list is empty to avoid division by zero
+    return sum(times) / len(times)
 
 def save_groups_b_to_csv(groups, output_file_path):
     df = pd.DataFrame(groups, columns=['Quantized Value', 'Slope', 'Time Points'])
@@ -45,7 +50,7 @@ class TimeSeriesCompressionMixPiece:
         self.b_intervals = {}
         self.tmp_b_intervals = {}
         self.buffer = 0
-        self.buffer_limit=1000
+        self.buffer_limit=100
         self.floor = True
         self.ceil= True
         self.b1 = None
@@ -56,8 +61,11 @@ class TimeSeriesCompressionMixPiece:
         self.slp_lower_1=float('-inf')
         self.slp_lower_2=float('-inf')
         self.length =0
+        self.arr_time_phases1 =[]
+        self.arr_time_phases2 =[]
 
     def mix_piece_phase1(self,data_point):
+        start_time_testing = time.time()
         Timestamp , Value = data_point # the first point of data stream
         self.buffer +=1
 
@@ -66,10 +74,11 @@ class TimeSeriesCompressionMixPiece:
             self.b1 = math.floor(Value / self.epsilon) * self.epsilon
             self.b2 = math.ceil(Value / self.epsilon) * self.epsilon
             self.ts = Timestamp
+
+            end_time_testing = time.time()
+            execution_time = end_time_testing - start_time_testing
+            self.arr_time_phases1.append(execution_time)
             return
-
-
-
 
         if Value>self.slp_upper_1*(Timestamp-self.ts)+self.b1+self.epsilon or Value<self.slp_lower_1*(Timestamp-self.ts)+self.b1-self.epsilon: #check flor
             self.floor = False
@@ -114,7 +123,12 @@ class TimeSeriesCompressionMixPiece:
             self.b_intervals={}
             self.mix_piece_phase2()
 
+        end_time_testing = time.time()
+        execution_time = end_time_testing-start_time_testing
+        self.arr_time_phases1.append(execution_time)
+
     def mix_piece_phase2(self):
+        start_time_testing = time.time()
         groups_b=[]
         ungrouped_b=[]
 
@@ -181,11 +195,14 @@ class TimeSeriesCompressionMixPiece:
 
 
 
-        save_groups_b_to_csv(reformat_groups_b, output_file_path='../../result/mix-piece/MP_Compress_Groups_b.csv')
-        save_groups_to_csv(reformat_groups, output_file_path='../../result/mix-piece/MP_Compress_Groups.csv')
-        save_groups_to_csv(reformat_rest, output_file_path='../../result/mix-piece/MP_Compress_Rest.csv')
+        # save_groups_b_to_csv(reformat_groups_b, output_file_path='../../result/mix-piece/MP_Compress_Groups_b.csv')
+        # save_groups_to_csv(reformat_groups, output_file_path='../../result/mix-piece/MP_Compress_Groups.csv')
+        # save_groups_to_csv(reformat_rest, output_file_path='../../result/mix-piece/MP_Compress_Rest.csv')
 
         print(f'Have been write down the data to csv file')
+        end_time_testing = time.time()
+        execution_time = end_time_testing-start_time_testing
+        self.arr_time_phases2.append(execution_time)
 
     def finish_processing(self):
         """
@@ -218,5 +235,15 @@ for data_point in data :
     MP_compressor.mix_piece_phase1(data_point)
 MP_compressor.finish_processing()
 
+avg_execution_time_phase1 = calculate_average_execution_time(MP_compressor.arr_time_phases1)
+avg_execution_time_phase2 = calculate_average_execution_time(MP_compressor.arr_time_phases2)
 
 
+print(avg_execution_time_phase1)
+print(avg_execution_time_phase2)
+
+with open('../../evaluation/execution_time_MP.csv', mode='w', newline='') as file:
+    writer = csv.writer(file)
+    # Write header
+    writer.writerow(["phase 1", "phase 2 with buffer size 100"])
+    writer.writerow([avg_execution_time_phase1, avg_execution_time_phase2])

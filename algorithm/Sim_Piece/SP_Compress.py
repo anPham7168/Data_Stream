@@ -1,8 +1,14 @@
 import csv
 import os
+import time
 from math import floor
 
 import pandas as pd
+
+def calculate_average_execution_time(times):
+    if not times:
+        return 0  # Return 0 if the list is empty to avoid division by zero
+    return sum(times) / len(times)
 
 def load_data(file_path):
     data_signal = []
@@ -37,8 +43,10 @@ class TimeSeriesCompressionSimPiece:
         self.slp_upper = float('inf')
         self.slp_lower = float('-inf')
         self.pb = None
-        self.buffer_limit = 1000  # Set the buffer size to 1000 points for testing
+        self.buffer_limit = 100  # Set the buffer size to 1000 points for testing
         self.tc = None
+        self.arr_execution_time_phase1 = []
+        self.arr_execution_time_phase2 = []
 
     def process_data_point(self, data_point):
         """
@@ -46,6 +54,7 @@ class TimeSeriesCompressionSimPiece:
         to apply phrase 2.
         :param data_point: (TimeStamp, Value)
         """
+        start_time_testing = time.time()
         TimeStamp, Value = data_point
         self.buffer += 1
 
@@ -89,10 +98,15 @@ class TimeSeriesCompressionSimPiece:
             self.buffer = 0
             self.process_phrase_2()
 
+        end_time_testing = time.time()
+        execution_time = (end_time_testing - start_time_testing)
+        self.arr_execution_time_phase1.append(execution_time)
+
     def process_phrase_2(self):
         """
         Apply Sim-piece phrase 2 to the current segments and reset the buffer.
         """
+        start_time_testing = time.time()
         groups = []
         for b, segs in self.tmp_dict_segments.items():
             grp = (b, float('inf'), float('-inf'), [])  # (b, slp_upper, slp_lower, [array of timestamp])
@@ -117,10 +131,13 @@ class TimeSeriesCompressionSimPiece:
             groups.append(grp)
 
         # Save data to a CSV file
-        save_groups_to_csv(groups, "../../result/sim-piece/SP_Compress.csv")
+        #save_groups_to_csv(groups, "../../result/sim-piece/SP_Compress.csv")
         self.tmp_dict_segments = {}
 
         print(f"Processed {len(groups)} groups from the buffer.")
+        end_time_testing = time.time()
+        execution_time = (end_time_testing - start_time_testing)
+        self.arr_execution_time_phase2.append(execution_time)
 
     def finish_processing(self):
         """
@@ -147,3 +164,12 @@ SP_Compressor = TimeSeriesCompressionSimPiece(epsilon)
 for data_point in data :
     SP_Compressor.process_data_point(data_point)
 SP_Compressor.finish_processing()
+
+executiontime_phase_1 = calculate_average_execution_time(SP_Compressor.arr_execution_time_phase1)
+executiontime_phase_2 = calculate_average_execution_time(SP_Compressor.arr_execution_time_phase2)
+
+with open('../../evaluation/execution_time_SP.csv', mode='w', newline='') as file:
+    writer = csv.writer(file)
+    # Write header
+    writer.writerow(["phase 1", "phase 2 with buffer size 100"])
+    writer.writerow([executiontime_phase_1, executiontime_phase_2])
